@@ -1,0 +1,297 @@
+# Create A Table 
+
+-- Creating a new table  
+
+CREATE TABLE employees
+(
+employee_id INT NOT NULL,
+name VARCHAR(50),
+contact_number VARCHAR(30),
+designation_id INT,
+last_update Timestamp NOT NULL DEFAULT now(),
+CONSTRAINT employee_pkey PRIMARY KEY (employee_id);
+
+# Grouping Data
+
+-- What is the average rental rate for each category? 
+
+SELECT 
+rating,
+AVG(rental_rate) AS "average_rental_rate" 
+FROM film 
+GROUP BY Rating; 
+
+-- What are the minimum and maximum rental duration for each rating category? 
+
+SELECT 
+rating, 
+MIN (rental_duration) AS "minimum_rental_duration" 
+MAX (rental_duration) AS "maximum_rental_duration" 
+FROM film
+GROUP BY rating;
+
+# Filtering Data 
+
+-- List of films where rental duration is between 3 and 7 (where 3 and 7 aren't inclusive).
+
+SELECT 
+film_id,
+title,
+description
+FROM film
+WHERE rental_duration > 3 and rental_duration < 7 
+ORDER BY rental_duration ASC; 
+
+-- List of films wnere film length is more than 120 minutes and rental rate is more than 2.99. 
+
+SELECT 
+film_id,
+title,
+description
+FROM film
+WHERE length > 120 AND rental_rate > 2.99;
+
+# Cleaning data and summarizing with descriptive statistics 
+
+-- Checking for duplicates from the film table. 
+
+SELECT 
+film_id,
+title,
+description,
+release_year,
+language_id,
+rental_duration,
+rental_rate,
+length,
+replacement_cost,
+rating
+COUNT (*)
+FROM 
+film
+GROUP BY 
+film_id,
+title,
+description,
+release_year,
+language_id,
+rental_duration,
+rental_rate,
+length,
+replacement_cost,
+rating
+HAVING COUNT (*) > 1; 
+
+-- Descriptive statistics for numeric columns in film table.
+
+SELECT 
+MIN (rental_rate) AS minimum_rental_rate,
+MAX (rental_rate) AS maximum_rental_rate,
+AVG (rental_rate) AS average_rental_rate,
+MIN (rental_duration) AS minimum_rental_duration,
+MAX (rental_duration) AS maximum_rental_duration,
+AVG (rental_duration) AS average_rental_duration,
+MIN (length) AS minimum_movie_lengtj,
+MAX (length) AS maximum_movie_length,
+AVG (length) AS average_movie_length,
+MIN (replacement_cost) AS minimum_replacement_cost,
+MAX (replacement_cost) AS maximum_replacement_cost,
+AVG (replacement_cost) AS average_replacement_cost,
+COUNT (*) AS count_rows
+FROM film; 
+
+-- Descriptive statistics for non numeric columns in film table.
+
+SELECT 
+MODE() WITHIN GROUP (ORDER BY title) AS modal_title,
+MODE () WITHIN GROUP (ORDER BY description) AS modal_description,
+MODE () WITHIN GROUP (ORDER BY rating) AS modal_rating
+FROM film; 
+
+## Joining Tables 
+
+-- Write a query to find the top 10 countries for Rockbuster in terms of customer numbers.
+
+SELECT 
+D.country,
+COUNT (A.customer_id) AS customer_count
+FROM customer A 
+INNER JOIN address B ON A.address_id = B.address_id
+INNER JOIN city C ON B.city_id = C.city_id
+INNER JOIN country D ON C.country_id = D.country_id
+GROUP BY country 
+ORDER BY customer_count DESC
+LIMIT 10; 
+
+-- Write a query to find the top 10 cities within the top 10 countries identified above. 
+
+SELECT 
+C.city,
+COUNT (A.customer_id) AS customer_count
+FROM customer A
+INNER JOIN address B ON A.address_id = B.address_id
+INNER JOIN city C ON B.city_id = C.city_id
+INNER JOIN country D ON C.country_id = D.country_id
+WHERE country IN ('India', 
+                  'China',
+                  'United States',
+                  'Japan',
+                  'Mexico',
+                  'Brazil',
+                  'Russian Federation',
+                  'Phillppines',
+                  'Turkey',
+                  'Indonesia')
+GROUP BY city 
+ORDER BY customer_count DESC 
+LIMIT 10;
+
+# Using Subqueries 
+
+-- Find the average amount paid by the top 5 customers 
+
+SELECT AVG (total_amount_paid) AS average
+FROM (SELECT 
+A. customer_id,
+A. first_name,
+A. last_name,
+D. country,
+C. city, 
+SUM (E.amount) AS total_amount_paid
+FROM customer A 
+INNER JOIN address B ON A.address_id= B.address_id
+INNER JOIN city C ON B.city_id = C.city_id
+INNER JOIN country D ON C.country_id = D.country_id
+INNER JOIN payment E ON A.customer_id = E.customer_id 
+WHERE city IN ( 'Aurora', 
+                'Shimoga',
+                'Apparecida de Goinia',
+                'Emeishan',
+                'Pontianak',
+                'Tarsus',
+                'Atlixo',
+                'Zalantun',
+                'Rio Ciaro',
+                'Tokat')
+GROUP BY A.customer_id, C.city, D.country
+ORDER BY total_amount_paid DESC
+LIMIT 5) AS total_amount_paid; 
+
+-- Find out how many of the top 5 customers are based within each country. 
+
+SELECT DISTINCT (A.country), 
+COUNT (DISTINCT D.customer_id) AS all_customer_count,
+COUNT (DISTINCT A.country) AS top_customer_count
+FROM country A
+INNER JOIN city B On A.country_id = B.country_id
+INNER JOIN address C ON B.city_id = C.city_id
+INNER JOIN customer D ON C.address_id = D.address_id
+LEFT JOIN ( SELECT 
+A. customer_id,
+A. first_name,
+A. last_name,
+D. country,
+C. city, 
+SUM (E.amount) AS total_amount_paid
+FROM customer A 
+INNER JOIN address B ON A.address_id= B.address_id
+INNER JOIN city C ON B.city_id = C.city_id
+INNER JOIN country D ON C.country_id = D.country_id
+INNER JOIN payment E ON A.customer_id = E.customer_id 
+WHERE city IN ( 'Aurora', 
+                'Shimoga',
+                'Apparecida de Goinia',
+                'Emeishan',
+                'Pontianak',
+                'Tarsus',
+                'Atlixo',
+                'Zalantun',
+                'Rio Ciaro',
+                'Tokat')
+GROUP BY A.customer_id, C.city, D.country
+ORDER BY total_amount_paid DESC
+LIMIT 5) AS top_5_customers 
+          ON A.country = top_5_customers.country 
+GROUP BY A.country, top_5_customers 
+ORDER BY all_customer_count DESC 
+LIMIT 5; 
+             
+ # Using Common Table Expressions (CTEs) 
+ 
+ --  Find the average amount paid by the top 5 customers 
+
+WITH avearge_cte
+(customer_id, first_name, last_name, city, country, total_amount_paid) AS 
+    (SELECT 
+A. customer_id,
+A. first_name,
+A. last_name,
+D. country,
+C. city, 
+SUM (E.amount) AS total_amount_paid
+FROM customer A 
+INNER JOIN address B ON A.address_id= B.address_id
+INNER JOIN city C ON B.city_id = C.city_id
+INNER JOIN country D ON C.country_id = D.country_id
+INNER JOIN payment E ON A.customer_id = E.customer_id 
+WHERE city IN ( 'Aurora', 
+                'Shimoga',
+                'Apparecida de Goinia',
+                'Emeishan',
+                'Pontianak',
+                'Tarsus',
+                'Atlixo',
+                'Zalantun',
+                'Rio Ciaro',
+                'Tokat')
+GROUP BY A.customer_id, C.city, D.country
+ORDER BY total_amount_paid DESC
+LIMIT 5) 
+SELECT AVG (total_amount_paid) 
+FROM average_cte;
+
+-- Find out how many of the top 5 customers are based within each country. 
+
+
+WITH top_5_customers_cte
+(customer_id, first_name, last_name, country, city, total_amount_paid) AS 
+       ( SELECT 
+A. customer_id,
+A. first_name,
+A. last_name,
+D. country,
+C. city, 
+SUM (E.amount) AS total_amount_paid
+FROM customer A 
+INNER JOIN address B ON A.address_id= B.address_id
+INNER JOIN city C ON B.city_id = C.city_id
+INNER JOIN country D ON C.country_id = D.country_id
+INNER JOIN payment E ON A.customer_id = E.customer_id 
+WHERE city IN ( 'Aurora', 
+                'Shimoga',
+                'Apparecida de Goinia',
+                'Emeishan',
+                'Pontianak',
+                'Tarsus',
+                'Atlixo',
+                'Zalantun',
+                'Rio Ciaro',
+                'Tokat')
+GROUP BY A.customer_id, C.city, D.country
+ORDER BY total_amount_paid DESC
+LIMIT 5)
+SELECT DISTINCT (A.country),
+COUNT(DISTINCT D.customer_id) AS all_customer_count,
+COUNT (DISTINCT A.country) AS top_customer_count
+FROM country A
+INNER JOIN city B ON A.country_id = B.country_id
+INNER JOIN address C ON B.city_id = C.city_id
+INNER JOIN customer D ON C.address_id = D.address_id
+LEFT JOIN top_5_customers_cte ON A.country = top_5_customers_cte.country
+GROUP BY A. country
+ORDER BY all_customer_count DESC 
+LIMIT 5; 
+
+ 
+ 
+                  
