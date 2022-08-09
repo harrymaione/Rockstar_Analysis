@@ -13,21 +13,21 @@ PostgresSQL was used via pgAdmin4 app.
 ## Data 
 The dataset is around 3mb and comprises information on the following parameters 
 
--Customer 
--Store
--Film Category 
--Film Actor 
--Staff
--Rentals
--Payment
--Address
--City
--Country
--Actor
--Film
--Inventory
--Category 
--Language 
+- Customer 
+- Store
+- Film Category 
+- Film Actor 
+- Staff
+- Rentals
+- Payment
+- Address
+- City
+- Country
+- Actor
+- Film
+- Inventory
+- Category 
+- Language 
 
 
 ## Additional Resources 
